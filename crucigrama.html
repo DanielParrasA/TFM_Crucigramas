@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Crucigrama</title>
+  <style>
+    table {
+      border-collapse: collapse;
+    }
+    td {
+      width: 40px;
+      height: 40px;
+      border: 1px solid black;
+      text-align: center;
+      cursor: pointer;
+      position: relative; 
+    }
+    td.clicked {
+      background-color: black; 
+    }
+    .numero-fila {
+      position: absolute;
+      top: 0px;
+      left: 0;
+      font-size: 12px;
+    }
+    .letra-asignada {
+  font-size: 20px;
+text-align: center;
+}
+
+
+#verticales-container,
+#horizontales-container {
+    float: right;
+    clear: both;
+    margin-left: 50px;
+}
+
+
+
+  </style>
+</head>
+<body>
+
+  <label for="size">Tamaño del crucigrama:</label>
+  <select id="size" onchange="cambiarTamañoTabla()">
+    <option value="4" selected>4x4</option>
+    <option value="5">5x5</option>
+    <option value="6">6x6</option>
+    <option value="7">7x7</option>
+    <option value="8">8x8</option>
+    <option value="9">9x9</option>
+    <option value="10">10x10</option>
+    <option value="11">11x11</option>
+    <option value="12">12x12</option>
+    <option value="13">13x13</option>
+    <option value="14">14x14</option>
+    <option value="15">15x15</option>
+  </select>
+
+  <button onclick="generarCasillasNegrasAleatorias()">Generar Casillas Negras Simétricas</button>
+  <button onclick="generarCasillasNegras()">Generar Casillas Negras No Simétricas</button>
+
+  <button id="resolver-botón" onclick="resolverCrucigrama()">Resolver Crucigrama</button>
+
+  <button id="cambiar-tamaño-letras-button">Mostrar/Ocultar Letras</button>
+
+
+      <div id="verticales-container">
+        <h2>VERTICALES</h2>
+        <div id="pista-verticales" contenteditable="true"></div>
+    </div>
+
+          <div id="horizontales-container">
+        <h2>HORIZONTALES</h2>
+        <div id="pista-horizontales" contenteditable="true"></div>
+    </div>
+
+  <td id="fila-0-columna-0" class="casilla">
+  <span class="contenido"></span>
+  <span class="numero-fila"></span> 
+</td>
+
+
+  <table id="tabla">
+    
+  </table>
+
+  <script>
+     
+    var tabla = document.getElementById("tabla");
+let numeroMaximo;
+
+function cambiarTamañoTabla() {
+    
+    while (tabla.firstChild) {
+        tabla.firstChild.remove();
+    }
+
+    
+    var size = parseInt(document.getElementById("size").value);
+
+    
+    for (var i = 0; i < size; i++) {
+        var fila = document.createElement("tr");
+
+        for (var j = 0; j < size; j++) {
+            var columna = document.createElement("td");
+            columna.id = `fila-${i}-columna-${j}`; 
+            if (size % 2 === 1 && i === Math.floor(size / 2) && j === Math.floor(size / 2)) {
+                columna.classList.add("center"); 
+                columna.onclick = function() {
+                    this.classList.toggle("clicked"); 
+                    borrarNumeros();
+                    numerarFilas();
+                };
+            } else {
+                columna.onclick = function() {
+                    this.classList.toggle("clicked"); 
+
+                    
+                    var filaClicada = Array.from(this.parentNode.parentNode.children).indexOf(this.parentNode);
+                    var columnaClicada = Array.from(this.parentNode.children).indexOf(this);
+
+                    
+                    var filaSimetrica = size - 1 - filaClicada;
+                    var columnaSimetrica = size - 1 - columnaClicada;
+
+                    
+                    if (!this.classList.contains("center")) {
+                        // Obtiene la celda simétrica
+                        var celdaSimetrica = tabla.rows[filaSimetrica].cells[columnaSimetrica];
+
+                        if (!celdaSimetrica.classList.contains("center")) {
+                            celdaSimetrica.classList.toggle("clicked"); 
+                            borrarNumeros();
+                            numerarFilas();
+                        }
+                    }
+                };
+            }
+
+            fila.appendChild(columna);
+        }
+
+        tabla.appendChild(fila);
+    }
+    numerarFilas();
+}
+
+// Función para generar casillas negras aleatorias
+function generarCasillasNegras() {
+    var celdas = tabla.getElementsByTagName("td");
+    var size = parseInt(document.getElementById("size").value);
+
+    // Asignar clases "clicked" con una cierta probabilidad
+    for (var i = 0; i < celdas.length; i++) {
+        var celda = celdas[i];
+        celda.classList.remove("clicked");
+        var probabilidad = Math.random();
+        if (probabilidad <= 0.2) {
+            celda.classList.add("clicked");
+        }
+    }
+
+    borrarNumeros();
+    numerarFilas();
+}
+
+// Función para generar casillas negras aleatorias simétricas
+function generarCasillasNegrasAleatorias() {
+    var celdas = tabla.getElementsByTagName("td");
+    var size = parseInt(document.getElementById("size").value);
+    var halfSize = Math.floor(size / 2);
+
+    // Asignar clases "clicked" con simetría
+    for (var i = 0; i < halfSize; i++) {
+        for (var j = 0; j < size; j++) {
+            var celda = celdas[i * size + j];
+            var probabilidad = Math.random();
+
+            // Calcular las coordenadas de la celda simétrica
+            var filaSimetrica = size - 1 - i;
+            var columnaSimetrica = size - 1 - j;
+            var celdaSimetrica = celdas[filaSimetrica * size + columnaSimetrica];
+
+            celda.classList.remove("clicked"); // Eliminar la clase "clicked"
+            celdaSimetrica.classList.remove("clicked"); // Eliminar la clase "clicked" de la celda simétrica
+
+            if (probabilidad <= 0.2) {
+                celda.classList.add("clicked");
+                celdaSimetrica.classList.add("clicked"); // Asignar clase "clicked" a la celda simétrica
+            }
+        }
+    }
+
+    // Si el tamaño es impar, asignar casilla negra en la fila y columna central
+    if (size % 2 === 1) {
+        var filaCentro = halfSize;
+        var columnaCentro = halfSize;
+        var celdaCentro = celdas[filaCentro * size + columnaCentro];
+        var probabilidadCentro = Math.random();
+
+        celdaCentro.classList.remove("clicked"); // Eliminar la clase "clicked" del centro
+
+        if (probabilidadCentro <= 0.2) {
+            celdaCentro.classList.add("clicked");
+        }
+    }
+
+    borrarNumeros();
+    numerarFilas();
+}
+
+function numerarFilas() {
+    var numero = 1;
+    var celdas = tabla.getElementsByTagName("td");
+    var size = parseInt(document.getElementById("size").value);
+    var celdaAnteriorNegra = false;
+
+    // Bucle para asignar la clase "numero-asignado" a las casillas que deben tener número
+    for (var i = 0; i < celdas.length; i++) {
+        var celda = celdas[i];
+        var fila = Math.floor(i / size);
+        var columna = i % size;
+
+        // Verifica si la celda es blanca y debe ser numerada
+        if (!celda.classList.contains("clicked")) {
+            if (columna === 0 || celdaAnteriorNegra || fila === 0) {
+                if (!celda.classList.contains("numero-asignado")) {
+                    celda.classList.add("numero-asignado");
+                }
+            }
+        }
+
+        // Verifica si la celda anterior es negra
+        celdaAnteriorNegra = celda.classList.contains("clicked");
+
+        // Bucle para asignar números a las casillas blancas debajo de las casillas negras
+        if (celda.classList.contains("clicked") && fila < size - 1) {
+            var celdaAbajo = celdas[i + size];
+            if (!celdaAbajo.classList.contains("clicked") && !celdaAbajo.classList.contains("numero-fila")) {
+                if (!celdaAbajo.classList.contains("numero-asignado")) {
+                    celdaAbajo.classList.add("numero-asignado");
+                }
+            }
+        }
+
+        // Condición para numerar las casillas blancas de la columna 0
+        if (columna === 0 && !celda.classList.contains("clicked") && !celda.classList.contains("numero-fila")) {
+            if (!celda.classList.contains("numero-asignado")) {
+                celda.classList.add("numero-asignado");
+            }
+        }
+    }
+
+    // Bucle para asignar números a las casillas que tienen la clase "numero-asignado"
+    for (var i = 0; i < celdas.length; i++) {
+        var celda = celdas[i];
+        if (celda.classList.contains("numero-asignado")) {
+            var numeroElement = document.createElement("span");
+            numeroElement.textContent = numero;
+            numeroElement.classList.add("numero-fila");
+            celda.appendChild(numeroElement);
+            numero++;
+            numeroMaximo = numero - 1;
+
+        }
+    }
+}
+
+function borrarNumeros() {
+    var celdas = tabla.getElementsByTagName("td");
+    for (var i = 0; i < celdas.length; i++) {
+        var celda = celdas[i];
+        while (celda.firstChild) {
+            celda.removeChild(celda.firstChild);
+        }
+        celda.classList.remove("numero-asignado");
+    }
+}
+
+// Llama a la función inicialmente para crear la tabla inicial
+cambiarTamañoTabla();
+
+
+//-------------------------------
+
+function borrarNumerosyLetras() {
+    var celdas = tabla.getElementsByTagName("td");
+    for (var i = 0; i < celdas.length; i++) {
+        var celda = celdas[i];
+        while (celda.firstChild) {
+            celda.removeChild(celda.firstChild);
+        }
+        celda.classList.remove("numero-asignado");
+        celda.classList.remove("letra-asignada");
+    }
+}
+
+// Función para cambiar el tamaño de fuente 
+function esconderLetras() {
+    var letras = document.getElementsByClassName("letra-asignada");
+
+    for (var i = 0; i < letras.length; i++) {
+        letras[i].style.fontSize = "0px";
+    }
+}
+
+
+
+
+var esconderLetrasButton = document.getElementById("cambiar-tamaño-letras-button");
+
+
+var fuenteCambiada = false;
+
+
+esconderLetrasButton.addEventListener("click", function () {
+    if (fuenteCambiada) {
+        // Si el tamaño de fuente ya cambió, restaurar el tamaño de fuente original
+        var letras = document.getElementsByClassName("letra-asignada");
+
+        for (var i = 0; i < letras.length; i++) {
+            letras[i].style.fontSize = "20px";
+        }
+
+        fuenteCambiada = false;
+    } else {
+        
+        esconderLetras();
+        fuenteCambiada = true;
+    }
+});
+
+
+
+
+function contarCasillasBlancas(desdeFila, desdeColumna, direccion) {
+    var celdas = tabla.getElementsByTagName("td");
+    var size = parseInt(document.getElementById("size").value);
+    var contadorCasillasBlancas = 0;
+
+    if (direccion === "fila") {
+        // Contar casillas blancas en la fila desde la casilla actual hacia la derecha
+        for (var j = desdeColumna; j < size; j++) {
+            var celda = tabla.rows[desdeFila].cells[j];
+            if (celda.classList.contains("clicked")) {
+                break; // Detenerse si se encuentra una casilla negra
+            }
+            contadorCasillasBlancas++;
+        }
+    } else if (direccion === "columna") {
+        // Contar casillas blancas en la columna desde la casilla actual hacia abajo
+        for (var i = desdeFila; i < size; i++) {
+            var celda = tabla.rows[i].cells[desdeColumna];
+            if (celda.classList.contains("clicked")) {
+                break; // Detenerse si se encuentra una casilla negra
+            }
+            contadorCasillasBlancas++;
+        }
+    }
+
+    return contadorCasillasBlancas;
+}
+
+function obtenerPistaDesdeServidor(palabra_obtenida) {
+  return new Promise(function(resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    // Definir la URL de la vista que obtiene la pista
+    var url = '/obtener_pista/' + palabra_obtenida + '/';
+
+    // Configurar la solicitud GET a la URL
+    xhr.open('GET', url, true);
+
+    // Configurar el manejo de la respuesta cuando la solicitud esté completa
+    xhr.onload = function () {
+      if (xhr.status === 200) {
+        // La solicitud se realizó con éxito
+        var respuesta = JSON.parse(xhr.responseText);
+
+        // Verificar si se obtuvo una pista
+        if (respuesta.pista) {
+          var pista = respuesta.pista;
+          // Resuelve la promesa con la pista obtenida
+          resolve(pista);
+        } else {
+          // No se encontró una pista para la palabra, rechaza la promesa
+          reject('No se encontró una pista.');
+        }
+      } else {
+        // Hubo un error en la solicitud, rechaza la promesa
+        reject('Error al obtener la pista.');
+      }
+    };
+
+    // Manejar errores de red
+    xhr.onerror = function () {
+      // Error de red, rechaza la promesa
+      reject('Error de red al obtener la pista.');
+    };
+
+    // Enviar la solicitud
+    xhr.send();
+  });
+}
+
+
+
+function obtenerPalabraDesdeServidor(letras, primera_letra, segunda_letra, tercera_letra, cuarta_letra, quinta_letra, sexta_letra, septima_letra, octava_letra, novena_letra, decima_letra, decimo_primera_letra, decimo_segunda_letra, decimo_tercera_letra, decimo_cuarta_letra, decimo_quinta_letra) {
+  
+    primera_letra = primera_letra || null;
+    segunda_letra = segunda_letra || null;
+    tercera_letra = tercera_letra || null;
+    cuarta_letra = cuarta_letra || null;
+    quinta_letra = quinta_letra || null;
+    sexta_letra = sexta_letra || null;
+    septima_letra = septima_letra || null;
+    octava_letra = octava_letra || null;
+    novena_letra = novena_letra || null;
+    decima_letra = decima_letra || null;
+    decimo_primera_letra = decimo_primera_letra || null;
+    decimo_segunda_letra = decimo_segunda_letra || null;
+    decimo_tercera_letra = decimo_tercera_letra || null;
+    decimo_cuarta_letra = decimo_cuarta_letra || null;
+    decimo_quinta_letra = decimo_quinta_letra || null;
+
+    return new Promise(function(resolve, reject) {
+        var xhr = new XMLHttpRequest();
+console.log("Solicitud GET: " + `/obtener_palabra/${letras}?primera_letra=${primera_letra}&segunda_letra=${segunda_letra}&tercera_letra=${tercera_letra}&cuarta_letra=${cuarta_letra}&quinta_letra=${quinta_letra}&sexta_letra=${sexta_letra}&septima_letra=${septima_letra}&octava_letra=${octava_letra}&novena_letra=${novena_letra}&decima_letra=${decima_letra}&decimo_primera_letra=${decimo_primera_letra}&decimo_segunda_letra=${decimo_segunda_letra}&decimo_tercera_letra=${decimo_tercera_letra}&decimo_cuarta_letra=${decimo_cuarta_letra}&decimo_quinta_letra=${decimo_quinta_letra}`);
+xhr.open("GET", `/obtener_palabra/${letras}?primera_letra=${primera_letra}&segunda_letra=${segunda_letra}&tercera_letra=${tercera_letra}&cuarta_letra=${cuarta_letra}&quinta_letra=${quinta_letra}&sexta_letra=${sexta_letra}&septima_letra=${septima_letra}&octava_letra=${octava_letra}&novena_letra=${novena_letra}&decima_letra=${decima_letra}&decimo_primera_letra=${decimo_primera_letra}&decimo_segunda_letra=${decimo_segunda_letra}&decimo_tercera_letra=${decimo_tercera_letra}&decimo_cuarta_letra=${decimo_cuarta_letra}&decimo_quinta_letra=${decimo_quinta_letra}`, true);
+
+
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    var respuesta = JSON.parse(xhr.responseText);
+                    if (respuesta.palabra) {
+                        resolve(respuesta.palabra);
+                    } else if (respuesta.error) {
+                        reject(respuesta.error);
+                    }
+                } else {
+                    reject("Error en la solicitud al servidor.");
+                }
+            }
+        };
+        xhr.send();
+    });
+}
+
+
+
+
+
+async function resolverCrucigrama() {
+   console.log("Número máximo:", numeroMaximo);
+var startTimestamp = Date.now(); 
+   var limiteDeTiempo = 900000; // 15 minutos en milisegundos
+   var palabrasVert = {};
+   var palabrasHoriz = {};
+   // Iniciar el bucle for
+   for (var i = 1; i <= numeroMaximo; i++) {
+      console.log("Iteración: " + i);
+         var casillasFila1 = document.querySelectorAll('.numero-fila');
+         var i_string = i.toString();
+
+
+
+         var devolucionPalabra = true;
+         var devolucionPalabra2 = true;
+
+         for (var j = 0; j < casillasFila1.length; j++) {
+            var casilla = casillasFila1[j];
+
+            if (casilla.textContent === i_string) {
+
+               var tdElement = casilla.parentNode;
+
+               
+               if (tdElement && tdElement.tagName === 'TD') {
+                  // Obtener las coordenadas de la casilla
+                  var fila = tdElement.parentNode.rowIndex;
+                  var columna = tdElement.cellIndex;
+
+                  // Mostrar información sobre las casillas en la fila y columna
+                  console.log("Casilla con valor " + i + " 1 encontrada en la fila " + fila + " y columna " + columna);
+
+                  // Contar casillas blancas en la fila desde la casilla actual hacia la derecha
+                  var casillasBlancasEnFila = contarCasillasBlancas(fila, columna, "fila");
+                  console.log("Casillas blancas en la fila: " + casillasBlancasEnFila);
+
+                  // Contar casillas blancas en la columna desde la casilla actual hacia abajo
+                  var casillasBlancasEnColumna = contarCasillasBlancas(fila, columna, "columna");
+                  console.log("Casillas blancas en la columna: " + casillasBlancasEnColumna);
+
+                  // Operaciones de columna
+if (fila === 0 || (tabla.rows[fila - 1].cells[columna].classList.contains("clicked"))) {
+  let palabraObtenida;
+                  try {
+                     var valoresCasillasEnColumna = [];
+                     var encontroCasillaNegraColumna = false;
+
+                     // Recorrer todas las casillas en la columna
+                     for (var k = fila; k < tabla.rows.length; k++) {
+                        var casillaActual = tabla.rows[k].cells[columna];
+                        var textoCasilla = casillaActual.textContent;
+
+                        if (casillaActual.classList.contains("clicked")) {
+                           encontroCasillaNegraColumna = true;
+                           break;
+                        }
+
+                        textoCasilla = textoCasilla.replace(/[1234567890]/g, '');
+                        valoresCasillasEnColumna.push(textoCasilla);
+                     }
+                        console.log("Valores de las casillas en la columna:", valoresCasillasEnColumna);
+
+
+
+                     // Realizar la solicitud a la base de datos 
+                     palabraObtenida = await obtenerPalabraDesdeServidor(
+        casillasBlancasEnColumna,
+        valoresCasillasEnColumna[0],
+        valoresCasillasEnColumna[1],
+        valoresCasillasEnColumna[2],
+        valoresCasillasEnColumna[3],
+        valoresCasillasEnColumna[4],
+        valoresCasillasEnColumna[5],
+        valoresCasillasEnColumna[6],
+        valoresCasillasEnColumna[7],
+        valoresCasillasEnColumna[8],
+        valoresCasillasEnColumna[9],
+        valoresCasillasEnColumna[10],
+        valoresCasillasEnColumna[11],
+        valoresCasillasEnColumna[12],
+        valoresCasillasEnColumna[13],
+        valoresCasillasEnColumna[14]
+    );
+
+                     // Asignar la palabra a las casillas de la columna
+                     for (var k = 0; k < casillasBlancasEnColumna; k++) {
+                        var casillaActual = document.getElementById(`fila-${fila + k}-columna-${columna}`);
+
+                        // Verificar si la casilla no tiene la clase "letra-asignada"
+                        if (!casillaActual.classList.contains("letra-asignada")) {
+                           // Agregar una clase CSS para representar la letra en la casilla
+                           casillaActual.classList.add("letra-asignada");
+
+                           // Crear un elemento para representar la letra
+                           var letraElement = document.createElement("div");
+                           letraElement.textContent = palabraObtenida.charAt(k);
+                           letraElement.classList.add("letra-casilla");
+                           casillaActual.appendChild(letraElement);
+                        }
+                     }
+
+                     console.log("Palabra obtenida del servidor:", palabraObtenida);
+                     palabrasVert[i] = palabraObtenida;
+
+
+
+                  } catch (error) {
+                     devolucionPalabra = false;
+    console.error("Errorrrrrrrrrrrrrrr:", error);
+
+borrarNumerosyLetras();
+numerarFilas();
+                  }
+
+}
+
+
+                    // Operaciones de fila
+                     var filaCompleta = tabla.rows[fila];
+
+
+
+                if (columna === 0 || (filaCompleta.cells[columna - 1].classList.contains("clicked"))) {
+let palabraObtenida2;
+console.log("cellll");
+try {
+
+                     var valoresCasillasEnFila = [];
+                     var encontroCasillaNegra = false;
+
+                     // Recorrer todas las casillas en la fila
+                     for (var f = columna; f < filaCompleta.cells.length; f++) {
+                        var casillaActual = filaCompleta.cells[f];
+                        var textoCasilla = casillaActual.textContent;
+
+                        if (casillaActual.classList.contains("clicked")) {
+                           encontroCasillaNegra = true;
+                           break;
+                        }
+
+                        textoCasilla = textoCasilla.replace(/[1234567890]/g, '');
+                        valoresCasillasEnFila.push(textoCasilla);
+                     }
+
+                     console.log("Valores de las casillas en la fila:", valoresCasillasEnFila);
+
+
+                     palabraObtenida2 = await obtenerPalabraDesdeServidor(
+        casillasBlancasEnFila,
+        valoresCasillasEnFila[0],
+        valoresCasillasEnFila[1],
+        valoresCasillasEnFila[2],
+        valoresCasillasEnFila[3],
+        valoresCasillasEnFila[4],
+        valoresCasillasEnFila[5],
+        valoresCasillasEnFila[6],
+        valoresCasillasEnFila[7],
+        valoresCasillasEnFila[8],
+        valoresCasillasEnFila[9],
+        valoresCasillasEnFila[10],
+        valoresCasillasEnFila[11],
+        valoresCasillasEnFila[12],
+        valoresCasillasEnFila[13],
+        valoresCasillasEnFila[14]
+    );
+
+
+                     // Asignar la palabra a las casillas de la columna
+
+                     for (var k = 0; k < casillasBlancasEnFila; k++) {
+                        var casillaActual = document.getElementById(`fila-${fila}-columna-${columna + k}`);
+
+                        // Verificar si la casilla no tiene la clase "letra-asignada"
+                        if (!casillaActual.classList.contains("letra-asignada")) {
+                           // Agregar una clase CSS para representar la letra en la casilla
+                           casillaActual.classList.add("letra-asignada");
+
+                           // Crear un elemento para representar la letra
+                           var letraElement = document.createElement("div");
+                           letraElement.textContent = palabraObtenida2.charAt(k);
+                           letraElement.classList.add("letra-casilla");
+                           casillaActual.appendChild(letraElement);
+                        }
+                     }
+                     console.log("Palabra obtenida del servidor:", palabraObtenida2);
+                     palabrasHoriz[i] = palabraObtenida2;
+
+
+                  } catch (error) {
+                     devolucionPalabra2 = false;
+                     console.error("Errorrrrrrrrrrrrrrrrrrrrrr:", error);
+
+borrarNumerosyLetras();
+numerarFilas();
+                  }
+
+
+                }
+
+
+
+               }
+            }
+         }
+
+         console.log("devo1: ", devolucionPalabra);
+         console.log("devo2: ", devolucionPalabra2);
+
+
+if (devolucionPalabra === false || devolucionPalabra2 === false) {
+
+i = 0
+palabrasHoriz = {};
+palabrasVert = {};
+
+}
+var tiempoTranscurrido = Date.now() - startTimestamp;
+                     if (tiempoTranscurrido >= limiteDeTiempo) {
+                        break;
+                     }
+   }
+
+   console.log(palabrasHoriz);
+   console.log(palabrasVert);
+
+   for (var palabra_obtenida in palabrasVert) {
+    var pista = await obtenerPistaDesdeServidor(palabrasVert[palabra_obtenida]);
+
+    const pistaVerticalesDiv = document.getElementById("pista-verticales");
+
+    const p = document.createElement("p");
+
+
+    p.innerHTML = palabra_obtenida + ". " + pista; 
+
+    pistaVerticalesDiv.appendChild(p);
+
+   }
+
+       for (var palabra_obtenida in palabrasHoriz) {
+    var pista = await obtenerPistaDesdeServidor(palabrasHoriz[palabra_obtenida]);
+
+    const pistaHorizontalesDiv = document.getElementById("pista-horizontales");
+
+    const p = document.createElement("p");
+
+    p.innerHTML = palabra_obtenida + ". " + pista; 
+
+    pistaHorizontalesDiv.appendChild(p);
+
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+  </script>
+</body>
+</html>
